@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Заказ книги</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.book_id.label }}<br>
+        {{ form.book_id }}<br>
+        {{ form.submit }}
+    </form>
+{% endblock %}

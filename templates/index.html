@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Каталог книг</h1>
+    <a href="{{ url_for('add_book') }}">Добавить книгу</a>
+    <ul>
+        {% for book in books %}
+            <li>
+                {{ book.title }} ({{ book.author.name }}, {{ book.genre }})
+                {% if book.available %}
+                    <span class="available">Доступна</span>
+                {% else %}
+                    <span class="unavailable">Нет в наличии</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

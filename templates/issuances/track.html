@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Отслеживание выдач</h1>
+    <table>
+        <tr>
+            <th>Пользователь</th>
+            <th>Книга</th>
+            <th>Дата выдачи</th>
+        </tr>
+        {% for issuance in issuances %}
+        <tr>
+            <td>{{ issuance.user.username }}</td>
+            <td>{{ issuance.book.title }}</td>
+            <td>{{ issuance.issuance_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
