@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 
-db = SQLAlchemy
+db = SQLAlchemy()
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key = True)
@@ -20,6 +20,7 @@ class Book(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable = False)
     genre = db.Column(db.String(20), nullable = False)
     available = db.Column(db.Boolean, default = True)
+    author = db.relationship("Author", backref = "books")
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key = True)

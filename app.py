@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
-from models import db, User, Author, Book
-from forms import LoginForm, BookForm
+from models import db, User, Author, Book, Order, Issuance
+from forms import LoginForm, BookForm, OrderForm, IssueForm
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '!!!&&&%%%64r147812648930**&^^'
@@ -11,6 +12,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 login_manager = LoginManager(app)
+
+migrate = Migrate(app, db)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -49,7 +52,7 @@ def add_book():
         db.session.commit()
         flash('Книга добавлена')
         return redirect(url_for('index'))
-    return render_template('add_book.html', form = form)
+    return render_template('books/add_book.html', form = form)
 
 @app.route('/order', methods=['GET', 'POST'])
 @login_required
@@ -62,7 +65,7 @@ def order():
         db.session.commit()
         flash('Книга заказана!')
         return redirect(url_for('index'))
-    return render_template('order.html', form=form)
+    return render_template('orders/order.html', form=form)
 
 @app.route('/issue', methods=['GET', 'POST'])
 @login_required
@@ -82,7 +85,7 @@ def issue():
         db.session.commit()
         flash('Книга выдана!')
         return redirect(url_for('index'))
-    return render_template('issue.html', form=form)
+    return render_template('issuances/issue.html', form=form)
 
 @app.route('/track')
 @login_required
@@ -92,7 +95,11 @@ def track():
         return redirect(url_for('index'))
 
     issuances = Issuance.query.filter_by(status='выдано').all()
-    return render_template('track.html', issuances=issuances)
+    return render_template('issuances/track.html', issuances=issuances)
+
+# Create tables after all models are defined
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(host = '0.0.0.0', port = 5000)
