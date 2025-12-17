@@ -3,6 +3,7 @@ from flask_login import LoginManager, login_user, login_required, current_user, 
 from models import db, User, Author, Book, Order, Issuance
 from forms import LoginForm, BookForm, OrderForm, IssueForm
 from flask_migrate import Migrate
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '!!!&&&%%%64r147812648930**&^^'
@@ -14,6 +15,20 @@ db.init_app(app)
 login_manager = LoginManager(app)
 
 migrate = Migrate(app, db)
+
+def role_required(roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Требуется вход в систему')
+                return redirect(url_for('login'))
+            if current_user.role not in roles:
+                flash('У вас нет прав для доступа к этой странице!')
+                return redirect(url_for('index'))
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -43,6 +58,7 @@ def logout():
 
 @app.route('/add_book', methods = ['GET', 'POST'])
 @login_required
+@role_required(['librarian', 'admin'])
 def add_book():
     form = BookForm()
     form.author.choices = [(author.id, author.name)for author in Author.query.all()]
@@ -59,21 +75,56 @@ def add_book():
 def order():
     form = OrderForm()
     form.book_id.choices = [(book.id, book.title) for book in Book.query.filter_by(available=True).all()]
+
+    if current_user.role() == 'admin':
+        form.user_id.choices = [(user.id, user.username) for user in User.query.all()]
+    else:
+        form.user_id.choices = [(current_user.id, current_user.username)]
+
     if form.validate_on_submit():
-        order = Order(user_id=current_user.id, book_id=form.book_id.data)
+        user_id = form.user_id.data if form.user_id.data else current_user.id
+        order = Order(user_id=user_id, book_id=form.book_id.data)
         db.session.add(order)
         db.session.commit()
         flash('Книга заказана!')
         return redirect(url_for('index'))
-    return render_template('orders/order.html', form=form)
+    orders = None
+    if current_user.role == 'admin':
+        orders = Order.query.all()
+    return render_template('orders/order.html', form=form, orders=orders)
+
+@app.route('/admin/orders')
+@login_required
+@role_required(['admin'])
+def admin_orders():
+    form = OrderForm()
+    form.book_id.choices = [(book.id, book.title) for book in Book.query.filter_by(available=True).all()]
+    form.user_id.choices = [(user.id, user.username) for user in User.query.all()]
+    orders = Order.query.order_by(Order.order_date.desc()).all()
+    return render_template('orders/order.html', form=form, orders=orders)
+
+@app.route('/admin/orders/<int:order_id>/update', methods=['POST'])
+@login_required
+@role_required(['admin'])
+def update_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    new_status = request.form.get('status')
+    if new_status:
+        order.status = new_status
+        if new_status == 'выдано':
+            book = Book.query.get(order.book_id)
+            if book:
+                book.available = False
+            issuance = Issuance(user_id=order.user_id, book_id=order.book_id)
+            db.session.add(issuance)
+        db.session.commit()
+        flash('Статус заказа обновлен')
+    return redirect(url_for('admin_orders'))
 
 @app.route('/issue', methods=['GET', 'POST'])
 @login_required
+@role_required(['librarian', 'admin'])
 def issue():
-    if current_user.role not in ['librarian', 'admin']:
-        flash('У вас нет прав для выдачи книг!')
-        return redirect(url_for('index'))
-
     form = IssueForm()
     form.user_id.choices = [(user.id, user.username) for user in User.query.filter_by(role='reader').all()]
     form.book_id.choices = [(book.id, book.title) for book in Book.query.filter_by(available=True).all()]
@@ -89,10 +140,8 @@ def issue():
 
 @app.route('/track')
 @login_required
+@role_required(['librarian', 'admin'])
 def track():
-    if current_user.role not in ['librarian', 'admin']:
-        flash('У вас нет прав для просмотра выдач!')
-        return redirect(url_for('index'))
 
     issuances = Issuance.query.filter_by(status='выдано').all()
     return render_template('issuances/track.html', issuances=issuances)

@@ -1,18 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Каталог книг</h1>
-    <a href="{{ url_for('add_book') }}">Добавить книгу</a>
-    <ul>
-        {% for book in books %}
-            <li>
-                {{ book.title }} ({{ book.author.name }}, {{ book.genre }})
-                {% if book.available %}
-                    <span class="available">Доступна</span>
-                {% else %}
-                    <span class="unavailable">Нет в наличии</span>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+	<h1 class="page-title">Каталог книг</h1>
+	{% if current_user.is_authenticated and current_user.role in ['librarian','admin'] %}
+		<a class="btn" href="{{ url_for('add_book') }}">Добавить книгу</a>
+	{% endif %}
+	<ul class="book-list">
+		{% for book in books %}
+			<li>
+				<div class="book-info">
+					<strong>{{ book.title }}</strong> — {{ book.author.name }} ({{ book.genre }})
+				</div>
+				<div class="book-state">
+					{% if book.available %}
+						<span class="available">Доступна</span>
+					{% else %}
+						<span class="unavailable">Нет в наличии</span>
+					{% endif %}
+				</div>
+			</li>
+		{% endfor %}
+	</ul>
 {% endblock %}

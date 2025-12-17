@@ -4,6 +4,9 @@
     <h1>Профиль пользователя</h1>
     <p>Имя пользователя: {{ current_user.username }}</p>
     <p>Роль: {{ current_user.role }}</p>
+    {% if current_user.role in ['admin','librarian'] %}
+        <p><a class="btn" href="{{ url_for('admin_orders') }}">Управление заказами</a></p>
+    {% endif %}
     <h2>Мои заказы</h2>
     <ul>
         {% for order in orders %}

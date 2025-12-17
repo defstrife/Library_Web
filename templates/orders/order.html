@@ -2,10 +2,51 @@
 
 {% block content %}
     <h1>Заказ книги</h1>
-    <form method="POST">
+    <form method="POST" class="form-order">
         {{ form.hidden_tag() }}
+        {% if current_user.is_authentificated and current_user.role == 'admin'%}
+            {{ form.user_id.label}}<br>
+            {{form.user_id}}<br>
+        {% endif %}
         {{ form.book_id.label }}<br>
         {{ form.book_id }}<br>
         {{ form.submit }}
     </form>
 {% endblock %}
+{% if orders %}
+        <h2>Все заказы</h2>
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Книга</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.user.username if order.user else order.user_id }}</td>
+                    <td>{{ order.book.title if order.book else order.book_id }}</td>
+                    <td>{{ order.order_date }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_order', order_id=order.id) }}" style="display:inline-block;">
+                            <select name="status">
+                                <option value="заказано" {% if order.status=='заказано' %}selected{% endif %}>заказано</option>
+                                <option value="в обработке" {% if order.status=='в обработке' %}selected{% endif %}>в обработке</option>
+                                <option value="выдано" {% if order.status=='выдано' %}selected{% endif %}>выдано</option>
+                                <option value="отменен" {% if order.status=='отменен' %}selected{% endif %}>отменен</option>
+                            </select>
+                            <button type="submit" class="btn small">Обновить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}

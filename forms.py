@@ -13,6 +13,7 @@ class BookForm(FlaskForm):
     genre = StringField('Жанр', validators = [DataRequired()])
     submit = SubmitField('Добавить книгу')
 class OrderForm(FlaskForm):
+    user_id = SelectField('Пользователь', coerce = int, validators = [DataRequired()])
     book_id = SelectField('Книга', coerce = int, validators = [DataRequired()])
     submit = SubmitField('Заказать')
 

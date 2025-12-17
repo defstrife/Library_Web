@@ -10,6 +10,13 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(120), nullable = False)
     role = db.Column(db.String(10), nullable = False) #admin, librarian, reader
 
+    def is_admin(self):
+        return self.role == 'admin'
+    def is_librarian(self):
+        return self.role == 'librarian'
+    def is_reader(self):
+        return self.role == 'reader'
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(80), nullable = False)
